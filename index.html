@@ -17,10 +17,54 @@
     color: #1a1a1a;
   }
   p.tagline { font-size: 1.1rem; letter-spacing: 0.02em; margin: 0 0 2.5rem; }
-  .me { max-width: 280px; width: 65vw; height: auto; }
+  .portrait-wrap { position: relative; }
+  .me { max-width: 280px; width: 65vw; height: auto; display: block; }
+  .hat {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+  .hat.on { opacity: 1; }
+  #hat-beanie { left: 18%; top: -2%; width: 64%; }
+  #hat-cap    { left: 18%; top: -2%; width: 64%; }
+  #hat-beret  { left: 23%; top: -4%; width: 60%; transform: rotate(-10deg); }
   h1.name { font-size: 1.3rem; font-weight: 600; margin: 2rem 0 0.25rem; }
   p.email { margin: 0; font-size: 0.95rem; }
   a { color: #1a1a1a; }
+  .hats {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1.6rem;
+  }
+  .hat-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+  .hat-btn:hover, .hat-btn:focus-visible { opacity: 1; }
+  .hat-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  .hat-btn[aria-pressed="true"] {
+    opacity: 1;
+    border-color: currentColor;
+    background: rgba(128, 128, 128, 0.10);
+  }
+  .hat-btn svg { width: 42px; height: auto; display: block; }
+  @media (prefers-reduced-motion: reduce) {
+    .hat { transition: none; }
+  }
   @media (prefers-color-scheme: dark) {
     body { background: #111; color: #e8e8e8; }
     a { color: #e8e8e8; }
@@ -29,11 +73,57 @@
 </head>
 <body>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="art-beanie" viewBox="0 0 220 120">
+    <path d="M22 92 C12 42 60 14 110 14 C160 14 208 42 198 92 Z" fill="#7a8494"/>
+    <path d="M44 58 C54 30 92 18 120 22 C98 31 64 44 54 66 Z" fill="#9aa3b2" opacity="0.55"/>
+    <path d="M22 92 C12 42 60 14 110 14 C160 14 208 42 198 92" fill="none" stroke="#5a6472" stroke-width="3" opacity="0.6"/>
+    <rect x="14" y="84" width="192" height="30" rx="14" fill="#5d6675"/>
+    <path d="M48 90 v20 M78 90 v20 M110 90 v20 M142 90 v20 M172 90 v20" stroke="#4c5462" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  </symbol>
+  <symbol id="art-cap" viewBox="0 0 240 130">
+    <path d="M78 76 C78 58 162 58 162 76 L162 96 C162 106 78 106 78 96 Z" fill="#4a4f5a"/>
+    <polygon points="120,18 232,52 120,86 8,52" fill="#3a3f49"/>
+    <polygon points="120,27 198,50 120,73 42,50" fill="#4b515c" opacity="0.6"/>
+    <polygon points="120,18 232,52 120,86 8,52" fill="none" stroke="#2f343d" stroke-width="3" opacity="0.6"/>
+    <circle cx="120" cy="52" r="5" fill="#2f343d"/>
+    <path d="M120 52 C165 55 200 56 210 62 C214 65 213 70 213 76 L213 94" fill="none" stroke="#c19a3f" stroke-width="4" stroke-linecap="round"/>
+    <path d="M207 94 h12 v14 c0 5 -12 5 -12 0 Z" fill="#c19a3f"/>
+  </symbol>
+  <symbol id="art-beret" viewBox="0 0 220 120">
+    <path d="M26 78 C20 38 70 18 118 24 C172 30 202 52 194 82 C186 102 60 108 34 92 C28 88 27 84 26 78 Z" fill="#a8513c"/>
+    <path d="M50 52 C62 32 100 26 130 32 C104 37 72 44 60 60 Z" fill="#c0735c" opacity="0.6"/>
+    <path d="M26 78 C20 38 70 18 118 24 C172 30 202 52 194 82" fill="none" stroke="#8f4230" stroke-width="3" opacity="0.6"/>
+    <ellipse cx="108" cy="92" rx="70" ry="9" fill="#8f4230" opacity="0.85"/>
+    <rect x="105" y="14" width="9" height="14" rx="4" fill="#8f4230"/>
+  </symbol>
+</svg>
+
 <p class="tagline">Programmer. Researcher. Product Designer.</p>
-<canvas class="me" id="portrait" role="img" aria-label="Portrait of Sneha"></canvas>
-<noscript><img class="me" src="me.png" alt=""></noscript>
+<div class="portrait-wrap">
+  <canvas class="me" id="portrait" role="img" aria-label="Portrait of Sneha"></canvas>
+  <svg class="hat" id="hat-beanie" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beanie"/></svg>
+  <svg class="hat" id="hat-cap" viewBox="0 0 240 130" aria-hidden="true"><use href="#art-cap"/></svg>
+  <svg class="hat" id="hat-beret" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beret"/></svg>
+  <noscript><img class="me" src="me.png" alt=""></noscript>
+</div>
 <h1 class="name">Sneha</h1>
 <p class="email"><a href="mailto:snehapriscilla@gmail.com">snehapriscilla@gmail.com</a></p>
+
+<div class="hats" role="group" aria-label="Try a hat on the portrait">
+  <button class="hat-btn" data-hat="beanie" aria-pressed="false">
+    <svg viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beanie"/></svg>
+    Programmer
+  </button>
+  <button class="hat-btn" data-hat="cap" aria-pressed="false">
+    <svg viewBox="0 0 240 130" aria-hidden="true"><use href="#art-cap"/></svg>
+    Researcher
+  </button>
+  <button class="hat-btn" data-hat="beret" aria-pressed="false">
+    <svg viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beret"/></svg>
+    Product Designer
+  </button>
+</div>
 
 <script>
 (function () {
@@ -72,6 +162,24 @@
     }
     drawStep();
   };
+})();
+
+(function () {
+  var current = null;
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('.hat-btn'));
+  var layers = Array.prototype.slice.call(document.querySelectorAll('.hat'));
+  function setHat(name) {
+    current = (current === name) ? null : name;
+    layers.forEach(function (layer) {
+      layer.classList.toggle('on', layer.id === 'hat-' + current);
+    });
+    buttons.forEach(function (btn) {
+      btn.setAttribute('aria-pressed', String(btn.dataset.hat === current));
+    });
+  }
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () { setHat(btn.dataset.hat); });
+  });
 })();
 </script>
 
