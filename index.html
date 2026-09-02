@@ -16,7 +16,6 @@
     background: #fff;
     color: #1a1a1a;
   }
-  p.tagline { font-size: 1.1rem; letter-spacing: 0.02em; margin: 0 0 2.5rem; }
   .portrait-wrap { position: relative; }
   .me { max-width: 280px; width: 65vw; height: auto; display: block; }
   .hat {
@@ -26,16 +25,29 @@
     transition: opacity 0.35s ease;
   }
   .hat.on { opacity: 1; }
-  #hat-beanie { left: 18%; top: -2%; width: 64%; }
-  #hat-cap    { left: 18%; top: -2%; width: 64%; }
-  #hat-beret  { left: 23%; top: -4%; width: 60%; transform: rotate(-10deg); }
+  #hat-beanie { left: 18%; top: -13%; width: 62%; }
+  #hat-cap    { left: 16%; top: -11%; width: 64%; }
+  #hat-beret  { left: 18%; top: -10%; width: 58%; transform: rotate(-12deg); }
+  .hat.hat-fly {
+    position: fixed;
+    margin: 0;
+    z-index: 10;
+    opacity: 1;
+    transition: none;
+  }
+  .hat.hat-fly.hat-fly-go {
+    transition: left 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+                top 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+                width 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+                transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
   h1.name { font-size: 1.3rem; font-weight: 600; margin: 2rem 0 0.25rem; }
   p.email { margin: 0; font-size: 0.95rem; }
   a { color: #1a1a1a; }
   .hats {
     display: flex;
     gap: 0.8rem;
-    margin-top: 1.6rem;
+    margin: 0 0 2.5rem;
   }
   .hat-btn {
     background: none;
@@ -64,6 +76,7 @@
   .hat-btn svg { width: 42px; height: auto; display: block; }
   @media (prefers-reduced-motion: reduce) {
     .hat { transition: none; }
+    .hat.hat-fly.hat-fly-go { transition: none; }
   }
   @media (prefers-color-scheme: dark) {
     body { background: #111; color: #e8e8e8; }
@@ -99,17 +112,6 @@
   </symbol>
 </svg>
 
-<p class="tagline">Programmer. Researcher. Product Designer.</p>
-<div class="portrait-wrap">
-  <canvas class="me" id="portrait" role="img" aria-label="Portrait of Sneha"></canvas>
-  <svg class="hat" id="hat-beanie" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beanie"/></svg>
-  <svg class="hat" id="hat-cap" viewBox="0 0 240 130" aria-hidden="true"><use href="#art-cap"/></svg>
-  <svg class="hat" id="hat-beret" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beret"/></svg>
-  <noscript><img class="me" src="me.png" alt=""></noscript>
-</div>
-<h1 class="name">Sneha</h1>
-<p class="email"><a href="mailto:snehapriscilla@gmail.com">snehapriscilla@gmail.com</a></p>
-
 <div class="hats" role="group" aria-label="Try a hat on the portrait">
   <button class="hat-btn" data-hat="beanie" aria-pressed="false">
     <svg viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beanie"/></svg>
@@ -124,6 +126,16 @@
     Product Designer
   </button>
 </div>
+
+<div class="portrait-wrap">
+  <canvas class="me" id="portrait" role="img" aria-label="Portrait of Sneha"></canvas>
+  <svg class="hat" id="hat-beanie" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beanie"/></svg>
+  <svg class="hat" id="hat-cap" viewBox="0 0 240 130" aria-hidden="true"><use href="#art-cap"/></svg>
+  <svg class="hat" id="hat-beret" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beret"/></svg>
+  <noscript><img class="me" src="me.png" alt=""></noscript>
+</div>
+<h1 class="name">Sneha</h1>
+<p class="email"><a href="mailto:snehapriscilla@gmail.com">snehapriscilla@gmail.com</a></p>
 
 <script>
 (function () {
@@ -166,17 +178,97 @@
 
 (function () {
   var current = null;
+  var reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var buttons = Array.prototype.slice.call(document.querySelectorAll('.hat-btn'));
   var layers = Array.prototype.slice.call(document.querySelectorAll('.hat'));
+
+  function layer(name) { return document.getElementById('hat-' + name); }
+  function btnIcon(name) { return document.querySelector('.hat-btn[data-hat="' + name + '"] svg'); }
+
+  // The layer's on-head geometry, ignoring its tilt, in viewport coords.
+  function headGeometry(l) {
+    var cs = getComputedStyle(l);
+    var tf = cs.transform === 'none' ? '' : cs.transform;
+    var prev = l.style.cssText;
+    l.style.transition = 'none';
+    l.style.transform = 'none';
+    var r = l.getBoundingClientRect();
+    l.style.cssText = prev;
+    return { rect: r, transform: tf };
+  }
+
+  function place(el, r, tf) {
+    el.style.left = r.left + 'px';
+    el.style.top = r.top + 'px';
+    el.style.width = r.width + 'px';
+    el.style.transform = tf || 'none';
+  }
+
+  function makeFly(name) {
+    var c = layer(name).cloneNode(true);
+    c.removeAttribute('id');
+    c.classList.remove('on');
+    c.classList.add('hat-fly');
+    document.body.appendChild(c);
+    return c;
+  }
+
+  function flyToHead(name) {
+    var l = layer(name);
+    var from = btnIcon(name).getBoundingClientRect();
+    var fin = headGeometry(l);
+    var c = makeFly(name);
+    place(c, from, null);
+    c.getBoundingClientRect(); // reflow so the transition takes
+    c.classList.add('hat-fly-go');
+    place(c, fin.rect, fin.transform);
+    var called = false;
+    var done = function () {
+      if (called) return;
+      called = true;
+      c.remove();
+      l.classList.add('on');
+    };
+    c.addEventListener('transitionend', done);
+    setTimeout(done, 800);
+  }
+
+  function flyToPicker(name) {
+    var l = layer(name);
+    var fin = headGeometry(l);
+    var to = btnIcon(name).getBoundingClientRect();
+    l.classList.remove('on');
+    var c = makeFly(name);
+    place(c, fin.rect, fin.transform);
+    c.getBoundingClientRect();
+    c.classList.add('hat-fly-go');
+    place(c, to, null);
+    var called = false;
+    var done = function () {
+      if (called) return;
+      called = true;
+      c.remove();
+    };
+    c.addEventListener('transitionend', done);
+    setTimeout(done, 800);
+  }
+
   function setHat(name) {
-    current = (current === name) ? null : name;
-    layers.forEach(function (layer) {
-      layer.classList.toggle('on', layer.id === 'hat-' + current);
-    });
+    var takingOff = (current === name);
+    var prev = current;
+    current = takingOff ? null : name;
     buttons.forEach(function (btn) {
       btn.setAttribute('aria-pressed', String(btn.dataset.hat === current));
     });
+    if (reduceMotion) {
+      layers.forEach(function (l) { l.classList.toggle('on', l.id === 'hat-' + current); });
+      return;
+    }
+    if (prev && prev !== name) layer(prev).classList.remove('on'); // swap: old one fades out
+    if (takingOff) flyToPicker(prev);
+    else flyToHead(name);
   }
+
   buttons.forEach(function (btn) {
     btn.addEventListener('click', function () { setHat(btn.dataset.hat); });
   });
