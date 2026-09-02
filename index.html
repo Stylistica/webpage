@@ -17,7 +17,7 @@
     color: #1a1a1a;
   }
   p.tagline { font-size: 1.1rem; letter-spacing: 0.02em; margin: 0 0 2.5rem; }
-  img.me { max-width: 280px; width: 65vw; height: auto; }
+  .me { max-width: 280px; width: 65vw; height: auto; }
   h1.name { font-size: 1.3rem; font-weight: 600; margin: 2rem 0 0.25rem; }
   p.email { margin: 0; font-size: 0.95rem; }
   a { color: #1a1a1a; }
@@ -29,10 +29,50 @@
 </head>
 <body>
 
-<p class="tagline">Programmer. Researcher. Designer.</p>
-<img class="me" src="me.png" alt="">
+<p class="tagline">Programmer. Researcher. Product Designer.</p>
+<canvas class="me" id="portrait" role="img" aria-label="Portrait of Sneha"></canvas>
+<noscript><img class="me" src="me.png" alt=""></noscript>
 <h1 class="name">Sneha</h1>
 <p class="email"><a href="mailto:snehapriscilla@gmail.com">snehapriscilla@gmail.com</a></p>
+
+<script>
+(function () {
+  var canvas = document.getElementById('portrait');
+  var img = new Image();
+  img.src = 'me.png';
+  img.onload = function () {
+    var w = img.naturalWidth, h = img.naturalHeight;
+    canvas.width = w;
+    canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    // Respect reduced-motion: show the final image immediately.
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      ctx.drawImage(img, 0, 0);
+      return;
+    }
+    // Pixel reveal: coarse mosaic that doubles in resolution until sharp.
+    var steps = [];
+    for (var s = 8; s < w; s *= 2) steps.push(s);
+    steps.push(w);
+    var duration = 2500; // ms total, plays once
+    var interval = duration / steps.length;
+    var i = 0;
+    function drawStep() {
+      var sw = steps[i];
+      var sh = Math.max(1, Math.round(sw * h / w));
+      var off = document.createElement('canvas');
+      off.width = sw;
+      off.height = sh;
+      off.getContext('2d').drawImage(img, 0, 0, sw, sh);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(off, 0, 0, sw, sh, 0, 0, w, h);
+      i++;
+      if (i < steps.length) setTimeout(drawStep, interval);
+    }
+    drawStep();
+  };
+})();
+</script>
 
 </body>
 </html>
