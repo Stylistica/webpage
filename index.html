@@ -25,7 +25,7 @@
     transition: opacity 0.35s ease;
   }
   .hat.on { opacity: 1; }
-  #hat-beanie { left: 12%; top: -7%; width: 72%; transform: rotate(-4deg); }
+  #hat-beanie { left: 15%; top: -3%; width: 70%; transform: rotate(-2deg); }
   #hat-cap    { left: 17%; top: -1%; width: 62%; transform: rotate(-3deg); }
   #hat-beret  { left: 17%; top: -1%; width: 58%; transform: rotate(-12deg); }
   .hat.hat-fly {
@@ -74,8 +74,15 @@
     background: rgba(128, 128, 128, 0.10);
   }
   .hat-btn svg { width: 42px; height: auto; display: block; }
+  @keyframes prop-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  #hat-beanie.on .prop {
+    animation: prop-spin 0.9s linear infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
   @media (prefers-reduced-motion: reduce) {
     .hat { transition: none; }
+    #hat-beanie.on .prop { animation: none; }
     .hat.hat-fly.hat-fly-go { transition: none; }
   }
   @media (prefers-color-scheme: dark) {
@@ -89,8 +96,10 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="art-beanie" viewBox="0 0 220 120">
     <rect x="99" y="9" width="7" height="18" rx="3" fill="#9a9a9a"/>
-    <ellipse cx="70" cy="9" rx="27" ry="8" fill="#EA4335" transform="rotate(-6 70 9)"/>
-    <ellipse cx="136" cy="9" rx="27" ry="8" fill="#FBBC05" transform="rotate(6 136 9)"/>
+    <g class="prop">
+      <ellipse cx="70" cy="9" rx="27" ry="8" fill="#EA4335" transform="rotate(-6 70 9)"/>
+      <ellipse cx="136" cy="9" rx="27" ry="8" fill="#FBBC05" transform="rotate(6 136 9)"/>
+    </g>
     <circle cx="103" cy="10" r="6" fill="#4285F4"/>
     <path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
@@ -101,15 +110,20 @@
     <path d="M103 26 C83 39 69 62 67 89 M103 26 C104 43 105 66 106 89 M103 26 C125 37 139 62 141 89" fill="none" stroke="#3a3a3a" stroke-width="2" opacity="0.3"/>
   </symbol>
   <symbol id="art-cap" viewBox="0 0 220 120">
-    <ellipse cx="30" cy="92" rx="22" ry="9" fill="#8a6844"/>
-    <ellipse cx="190" cy="92" rx="22" ry="9" fill="#8a6844"/>
-    <path d="M28 90 C22 46 68 24 110 24 C152 24 198 46 192 90 Z" fill="#b08a5a"/>
-    <path d="M52 58 C62 36 96 28 122 32 C100 40 70 50 60 68 Z" fill="#caa87a" opacity="0.55"/>
-    <path d="M28 90 C22 46 68 24 110 24 C152 24 198 46 192 90" fill="none" stroke="#7d5c38" stroke-width="3" opacity="0.6"/>
-    <path d="M110 24 C104 46 102 68 104 90 M110 24 C116 46 118 68 116 90" stroke="#7d5c38" stroke-width="2.5" fill="none" opacity="0.4"/>
-    <path d="M110 22 C102 12 92 10 88 16 C86 22 96 26 110 24 Z" fill="#7d5c38"/>
-    <path d="M110 22 C118 12 128 10 132 16 C134 22 124 26 110 24 Z" fill="#7d5c38"/>
-    <circle cx="110" cy="21" r="4.5" fill="#6b4e2e"/>
+    <path d="M14 88 C10 78 22 70 40 70 C52 70 56 76 54 84 C52 94 30 98 20 94 C16 92 15 91 14 88 Z" fill="#a5794a"/>
+    <path d="M206 88 C210 78 198 70 180 70 C168 70 164 76 166 84 C168 94 190 98 200 94 C204 92 205 91 206 88 Z" fill="#a5794a"/>
+    <path d="M34 86 C26 42 66 20 110 20 C154 20 194 42 186 86 C150 92 70 92 34 86 Z" fill="#c49a66"/>
+    <g stroke="#8a6844" stroke-width="2.2" opacity="0.28" fill="none">
+      <path d="M52 46 L76 40 M64 64 L92 57 M104 40 L128 36 M124 62 L152 56 M84 80 L112 74 M140 78 L164 72"/>
+      <path d="M62 38 L70 50 M98 32 L104 46 M136 40 L142 54 M76 66 L84 78 M118 64 L124 78"/>
+    </g>
+    <path d="M56 54 C66 34 98 26 124 30 C102 38 74 48 64 66 Z" fill="#dbbc8e" opacity="0.5"/>
+    <path d="M34 86 C26 42 66 20 110 20 C154 20 194 42 186 86" fill="none" stroke="#7d5c38" stroke-width="3" opacity="0.55"/>
+    <path d="M110 20 C103 42 101 64 103 88 M110 20 C117 42 119 64 117 88" stroke="#7d5c38" stroke-width="2.2" fill="none" opacity="0.35"/>
+    <path d="M35 80 C74 88 146 88 185 80" stroke="#7d5c38" stroke-width="2.2" fill="none" opacity="0.4"/>
+    <path d="M110 18 C101 7 90 5 86 12 C84 19 95 23 110 21 Z" fill="#8a6844"/>
+    <path d="M110 18 C119 7 130 5 134 12 C136 19 125 23 110 21 Z" fill="#8a6844"/>
+    <circle cx="110" cy="17" r="4.2" fill="#6b4e2e"/>
   </symbol>
   <symbol id="art-beret" viewBox="0 0 220 120">
     <path d="M26 78 C20 38 70 18 118 24 C172 30 202 52 194 82 C186 102 60 108 34 92 C28 88 27 84 26 78 Z" fill="#a8513c"/>
@@ -137,7 +151,21 @@
 
 <div class="portrait-wrap">
   <canvas class="me" id="portrait" role="img" aria-label="Portrait of Sneha"></canvas>
-  <svg class="hat" id="hat-beanie" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beanie"/></svg>
+  <svg class="hat" id="hat-beanie" viewBox="0 0 220 120" aria-hidden="true">
+    <rect x="99" y="9" width="7" height="18" rx="3" fill="#9a9a9a"/>
+    <g class="prop">
+      <ellipse cx="70" cy="9" rx="27" ry="8" fill="#EA4335" transform="rotate(-6 70 9)"/>
+      <ellipse cx="136" cy="9" rx="27" ry="8" fill="#FBBC05" transform="rotate(6 136 9)"/>
+    </g>
+    <circle cx="103" cy="10" r="6" fill="#4285F4"/>
+    <path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
+    <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
+    <path d="M103 26 C104 43 105 66 106 89 L141 89 C139 62 125 37 103 26 Z" fill="#FBBC05"/>
+    <path d="M103 26 C125 37 139 62 141 89 L173 89 C173 56 149 29 103 26 Z" fill="#34A853"/>
+    <path d="M48 60 C58 42 80 33 100 34 C84 42 62 52 53 70 Z" fill="#ffffff" opacity="0.35"/>
+    <path d="M31 89 C33 56 56 29 103 26 C149 29 173 56 173 89 L31 89" fill="none" stroke="#3a3a3a" stroke-width="3" opacity="0.45"/>
+    <path d="M103 26 C83 39 69 62 67 89 M103 26 C104 43 105 66 106 89 M103 26 C125 37 139 62 141 89" fill="none" stroke="#3a3a3a" stroke-width="2" opacity="0.3"/>
+  </svg>
   <svg class="hat" id="hat-cap" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-cap"/></svg>
   <svg class="hat" id="hat-beret" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beret"/></svg>
   <noscript><img class="me" src="me.png" alt=""></noscript>
@@ -292,5 +320,6 @@
 
 </body>
 </html>
+
 
 
