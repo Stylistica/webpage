@@ -15,10 +15,9 @@
     font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: #fff;
     color: #1a1a1a;
+    touch-action: pan-y;
   }
-  /* touch-action:none so a flick on the hat can't scroll the page; the padding
-     (offset by the negative margin) extends that zone up over the propeller. */
-  .portrait-wrap { position: relative; touch-action: none; padding-top: 30px; margin-top: -30px; }
+  .portrait-wrap { position: relative; touch-action: pan-y; }
   .me { max-width: 280px; width: 65vw; height: auto; display: block; }
   .hat {
     position: absolute;
@@ -27,7 +26,7 @@
     transition: opacity 0.35s ease;
   }
   .hat.on { opacity: 1; }
-  #hat-beanie { left: 14%; top: -1.5%; width: 78%; transform: rotate(-2deg); }
+  #hat-beanie { left: 15%; top: -3%; width: 70%; transform: rotate(-2deg); }
   #hat-cap    { left: 10%; top: -5%; width: 79%; transform: rotate(-2deg); }
   #hat-beret  { left: 17%; top: -1%; width: 58%; transform: rotate(-12deg); }
   .hat.hat-fly {
@@ -382,6 +381,27 @@
            e.clientY >= r.top - padY && e.clientY <= r.bottom + padY;
   }
 
+  // Block page scroll for gestures that start on the worn hat. Pure JS (touch-action
+  // stays pan-y everywhere) so hat placement and layout are untouched.
+  var hatTouch = false;
+  window.addEventListener('touchstart', function (e) {
+    hatTouch = false;
+    var t = e.touches[0];
+    if (!t || reduceMotion) return;
+    var h = document.querySelector('.hat.on');
+    if (h) {
+      var r = h.getBoundingClientRect(), pad = 14;
+      if (t.clientX >= r.left - pad && t.clientX <= r.right + pad &&
+          t.clientY >= r.top - pad && t.clientY <= r.bottom + pad) hatTouch = true;
+    }
+    if (!hatTouch && current === 'beanie' && overProp(t)) hatTouch = true;
+  }, { passive: true });
+  window.addEventListener('touchmove', function (e) {
+    if (hatTouch) e.preventDefault();
+  }, { passive: false });
+  window.addEventListener('touchend', function () { hatTouch = false; });
+  window.addEventListener('touchcancel', function () { hatTouch = false; });
+
   window.addEventListener('pointerdown', function (e) {
     if (current !== 'beanie' || reduceMotion || !overProp(e)) return;
     stopSpin(); // hand off from the landing burst to direct control
@@ -426,7 +446,6 @@
 
 </body>
 </html>
-
 
 
 
