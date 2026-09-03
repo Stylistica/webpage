@@ -76,7 +76,7 @@
   .hat-btn svg { width: 42px; height: auto; display: block; }
   @keyframes prop-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   #hat-beanie .prop { transform-box: fill-box; transform-origin: center; }
-  #hat-beanie.on { pointer-events: auto; touch-action: none; cursor: grab; }
+  #hat-beanie.on { pointer-events: all; touch-action: none; cursor: grab; }
   #hat-beanie.on.dragging { cursor: grabbing; }
   #hat-beanie.spinning .prop {
     animation: prop-spin 0.9s linear 4;
@@ -425,6 +425,7 @@
 
 </body>
 </html>
+
 
 
 
