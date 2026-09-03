@@ -15,9 +15,10 @@
     font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: #fff;
     color: #1a1a1a;
-    touch-action: pan-y;
   }
-  .portrait-wrap { position: relative; touch-action: pan-y; }
+  /* touch-action:none so a flick on the hat can't scroll the page; the padding
+     (offset by the negative margin) extends that zone up over the propeller. */
+  .portrait-wrap { position: relative; touch-action: none; padding-top: 30px; margin-top: -30px; }
   .me { max-width: 280px; width: 65vw; height: auto; display: block; }
   .hat {
     position: absolute;
@@ -26,7 +27,7 @@
     transition: opacity 0.35s ease;
   }
   .hat.on { opacity: 1; }
-  #hat-beanie { left: 15%; top: -3%; width: 70%; transform: rotate(-2deg); }
+  #hat-beanie { left: 11%; top: -1.5%; width: 78%; transform: rotate(-2deg); }
   #hat-cap    { left: 10%; top: -5%; width: 79%; transform: rotate(-2deg); }
   #hat-beret  { left: 17%; top: -1%; width: 58%; transform: rotate(-12deg); }
   .hat.hat-fly {
@@ -425,6 +426,7 @@
 
 </body>
 </html>
+
 
 
 
