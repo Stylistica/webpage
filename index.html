@@ -409,13 +409,12 @@
     var trail = dragState.trail;
     dragState = null;
     var now = performance.now();
-    var old = trail[0], i;
-    for (i = trail.length - 1; i >= 0; i--) {
-      if (now - trail[i][0] > 120) { old = trail[i]; break; }
-    }
-    var v = 0;
-    var lastPt = trail[trail.length - 1];
-    if (now > old[0]) v = (lastPt[1] - old[1]) / ((now - old[0]) / 1000);
+    // Keep only the recent tail of the gesture so a pause before release kills the flick.
+    var recent = trail.filter(function (p) { return now - p[0] <= 150; });
+    if (recent.length < 2) recent = trail.slice(-2);
+    var first = recent[0], lastPt = recent[recent.length - 1];
+    var dt = (lastPt[0] - first[0]) / 1000;
+    var v = dt > 0 ? (lastPt[1] - first[1]) / dt : 0;
     v = Math.max(-4000, Math.min(4000, v));
     if (Math.abs(v) > 30) startInertia(v);
   }
@@ -426,6 +425,7 @@
 
 </body>
 </html>
+
 
 
 
