@@ -75,6 +75,9 @@
   }
   .hat-btn svg { width: 42px; height: auto; display: block; }
   @keyframes prop-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  #hat-beanie .prop { transform-box: fill-box; transform-origin: center; }
+  #hat-beanie.on { pointer-events: auto; touch-action: none; cursor: grab; }
+  #hat-beanie.on.dragging { cursor: grabbing; }
   #hat-beanie.spinning .prop {
     animation: prop-spin 0.9s linear 4;
     transform-box: fill-box;
@@ -334,15 +337,101 @@
     btn.addEventListener('click', function () { setHat(btn.dataset.hat); });
   });
 
-  // The hat layers are pointer-events:none, so a tap on the worn hat lands here.
-  document.querySelector('.portrait-wrap').addEventListener('click', function () {
-    if (current === 'beanie') spinProp();
+  // Drag-to-spin: flick the propeller like a fidget spinner, with momentum.
+  var prop = beanieLayer.querySelector('.prop');
+  var spinAngle = 0, spinVel = 0, spinRaf = null;
+  var dragState = null;
+
+  function propAngleNow() {
+    var tf = getComputedStyle(prop).transform;
+    if (tf && tf !== 'none') {
+      var m = tf.match(/matrix\(([^)]+)\)/);
+      if (m) {
+        var p = m[1].split(',').map(parseFloat);
+        return Math.atan2(p[1], p[0]) * 180 / Math.PI;
+      }
+    }
+    return spinAngle;
+  }
+
+  function applySpin() {
+    prop.style.transform = 'rotate(' + spinAngle + 'deg)';
+  }
+
+  function spinStep(ts) {
+    if (spinRaf === null) return;
+    var dt = Math.min(0.05, (ts - spinStep.last) / 1000);
+    spinStep.last = ts;
+    spinAngle += spinVel * dt;
+    spinVel *= Math.exp(-dt / 1.5); // friction: gentle momentum decay
+    if (Math.abs(spinVel) < 30) { spinVel = 0; spinRaf = null; return; }
+    applySpin();
+    spinRaf = requestAnimationFrame(spinStep);
+  }
+
+  function startInertia(v) {
+    spinVel = v;
+    if (spinRaf === null) {
+      spinRaf = requestAnimationFrame(function (ts) { spinStep.last = ts; spinStep(ts); });
+    }
+  }
+
+  function pointerAngle(e) {
+    var r = prop.getBoundingClientRect();
+    return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
+  }
+
+  beanieLayer.addEventListener('pointerdown', function (e) {
+    if (current !== 'beanie' || reduceMotion) return;
+    stopSpin(); // hand off from the landing burst to direct control
+    spinAngle = propAngleNow();
+    spinVel = 0;
+    applySpin();
+    dragState = { last: pointerAngle(e), trail: [[performance.now(), spinAngle]] };
+    beanieLayer.classList.add('dragging');
+    if (beanieLayer.setPointerCapture) {
+      try { beanieLayer.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+    e.preventDefault();
   });
+
+  beanieLayer.addEventListener('pointermove', function (e) {
+    if (!dragState) return;
+    var a = pointerAngle(e);
+    var d = a - dragState.last;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    dragState.last = a;
+    spinAngle += d;
+    applySpin();
+    dragState.trail.push([performance.now(), spinAngle]);
+    if (dragState.trail.length > 6) dragState.trail.shift();
+  });
+
+  function endDrag() {
+    if (!dragState) return;
+    var trail = dragState.trail;
+    dragState = null;
+    beanieLayer.classList.remove('dragging');
+    var now = performance.now();
+    var old = trail[0], i;
+    for (i = trail.length - 1; i >= 0; i--) {
+      if (now - trail[i][0] > 120) { old = trail[i]; break; }
+    }
+    var v = 0;
+    var lastPt = trail[trail.length - 1];
+    if (now > old[0]) v = (lastPt[1] - old[1]) / ((now - old[0]) / 1000);
+    v = Math.max(-4000, Math.min(4000, v));
+    if (Math.abs(v) > 30) startInertia(v);
+  }
+  beanieLayer.addEventListener('pointerup', endDrag);
+  beanieLayer.addEventListener('pointercancel', endDrag);
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
