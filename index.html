@@ -75,14 +75,14 @@
   }
   .hat-btn svg { width: 42px; height: auto; display: block; }
   @keyframes prop-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  #hat-beanie.on .prop {
-    animation: prop-spin 0.9s linear infinite;
+  #hat-beanie.spinning .prop {
+    animation: prop-spin 0.9s linear 4;
     transform-box: fill-box;
     transform-origin: center;
   }
   @media (prefers-reduced-motion: reduce) {
     .hat { transition: none; }
-    #hat-beanie.on .prop { animation: none; }
+    #hat-beanie.spinning .prop { animation: none; }
     .hat.hat-fly.hat-fly-go { transition: none; }
   }
   @media (prefers-color-scheme: dark) {
@@ -221,6 +221,21 @@
   function layer(name) { return document.getElementById('hat-' + name); }
   function btnIcon(name) { return document.querySelector('.hat-btn[data-hat="' + name + '"] svg'); }
 
+  var beanieLayer = layer('beanie');
+  var spinTimer = null;
+  function stopSpin() {
+    clearTimeout(spinTimer);
+    beanieLayer.classList.remove('spinning');
+  }
+  function spinProp() {
+    if (reduceMotion) return;
+    beanieLayer.classList.remove('spinning');
+    beanieLayer.getBoundingClientRect(); // reflow so the animation restarts
+    beanieLayer.classList.add('spinning');
+    clearTimeout(spinTimer);
+    spinTimer = setTimeout(stopSpin, 900 * 4 + 150); // 4 turns, then stop
+  }
+
   // The layer's on-head geometry, ignoring its tilt, in viewport coords.
   function headGeometry(l) {
     var cs = getComputedStyle(l);
@@ -244,6 +259,7 @@
     var c = layer(name).cloneNode(true);
     c.removeAttribute('id');
     c.classList.remove('on');
+    c.classList.remove('spinning');
     c.classList.add('hat-fly');
     document.body.appendChild(c);
     return c;
@@ -268,6 +284,7 @@
       l.getBoundingClientRect();
       l.style.transition = '';
       c.remove();
+      if (name === 'beanie') spinProp();
     };
     c.addEventListener('transitionend', done);
     setTimeout(done, 800);
@@ -297,6 +314,7 @@
   }
 
   function setHat(name) {
+    stopSpin();
     var takingOff = (current === name);
     var prev = current;
     current = takingOff ? null : name;
@@ -315,11 +333,17 @@
   buttons.forEach(function (btn) {
     btn.addEventListener('click', function () { setHat(btn.dataset.hat); });
   });
+
+  // The hat layers are pointer-events:none, so a tap on the worn hat lands here.
+  document.querySelector('.portrait-wrap').addEventListener('click', function () {
+    if (current === 'beanie') spinProp();
+  });
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
