@@ -15,6 +15,7 @@
     font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: #fff;
     color: #1a1a1a;
+    touch-action: pan-y;
   }
   .portrait-wrap { position: relative; touch-action: pan-y; }
   .me { max-width: 280px; width: 65vw; height: auto; display: block; }
@@ -331,7 +332,6 @@
 
   // Swipe-to-spin: flick across the propeller like a fidget spinner, with momentum.
   var prop = beanieLayer.querySelector('.prop');
-  var wrap = document.querySelector('.portrait-wrap');
   var spinAngle = 0, spinVel = 0, spinRaf = null;
   var dragState = null;
 
@@ -381,20 +381,17 @@
            e.clientY >= r.top - padY && e.clientY <= r.bottom + padY;
   }
 
-  wrap.addEventListener('pointerdown', function (e) {
+  window.addEventListener('pointerdown', function (e) {
     if (current !== 'beanie' || reduceMotion || !overProp(e)) return;
     stopSpin(); // hand off from the landing burst to direct control
     spinAngle = propAngleNow();
     spinVel = 0;
     applySpin();
     dragState = { last: pointerAngle(e), trail: [[performance.now(), spinAngle]] };
-    if (wrap.setPointerCapture) {
-      try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
-    }
     e.preventDefault();
   });
 
-  wrap.addEventListener('pointermove', function (e) {
+  window.addEventListener('pointermove', function (e) {
     if (!dragState) return;
     var a = pointerAngle(e);
     var d = a - dragState.last;
@@ -422,13 +419,14 @@
     v = Math.max(-4000, Math.min(4000, v));
     if (Math.abs(v) > 30) startInertia(v);
   }
-  wrap.addEventListener('pointerup', endDrag);
-  wrap.addEventListener('pointercancel', endDrag);
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
