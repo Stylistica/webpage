@@ -21,6 +21,9 @@
     touch-action: pan-y;
   }
   .portrait-wrap { position: relative; touch-action: pan-y; }
+  /* Pointer gestures on the hats/portrait must never start a text selection
+     (Safari ignores preventDefault on pointerdown, so CSS is the reliable stop). */
+  .portrait-wrap, .hats, h1.name { -webkit-user-select: none; user-select: none; }
   .me { max-width: 280px; width: 65vw; height: auto; display: block; }
   .hat {
     position: absolute;
@@ -468,6 +471,7 @@
 
 </body>
 </html>
+
 
 
 
