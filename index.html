@@ -82,18 +82,10 @@
     background: rgba(128, 128, 128, 0.10);
   }
   .hat-btn svg { width: 42px; height: auto; display: block; }
-  /* The propeller turns around the hat's upright post. In the front view its
-     circular path is foreshortened into a shallow ellipse, rather than
-     rotating flat against the screen like a clock hand. */
-  @keyframes prop-spin {
-    from { transform: rotate(0deg) scaleY(0.28); }
-    to   { transform: rotate(360deg) scaleY(0.28); }
-  }
-  #hat-beanie .prop {
-    transform-box: fill-box;
-    transform-origin: center;
-    transform: rotate(0deg) scaleY(0.28);
-  }
+  /* The propeller spins in a horizontal plane, foreshortened into a shallow
+     ellipse from this front view. The blades stay rigid (their drawn shape
+     never squashes); only the sweep plane is flattened. Driven from JS, which
+     orbits each blade along the ellipse - see applySpin(). */
   /* The worn hat stays click-through except for one explicit hit target over
      the whole beanie (crown and blades), so a tap anywhere on it spins the
      propeller. This avoids guessing hit geometry from window-level pointer
@@ -103,14 +95,8 @@
     cursor: pointer;
     touch-action: none;
   }
-  #hat-beanie.spinning .prop {
-    animation: prop-spin 0.9s linear 4;
-    transform-box: fill-box;
-    transform-origin: center;
-  }
   @media (prefers-reduced-motion: reduce) {
     .hat { transition: none; }
-    #hat-beanie.spinning .prop { animation: none; }
     .hat.hat-fly.hat-fly-go { transition: none; }
   }
   @media (prefers-color-scheme: dark) {
@@ -181,11 +167,11 @@
   <svg class="hat" id="hat-beanie" viewBox="0 0 220 120" aria-hidden="true">
     <rect x="99" y="9" width="7" height="18" rx="3" fill="#9a9a9a"/>
     <g class="prop">
-      <ellipse cx="70" cy="9" rx="27" ry="8" fill="#EA4335" transform="rotate(-6 70 9)"/>
-      <ellipse cx="136" cy="9" rx="27" ry="8" fill="#FBBC05" transform="rotate(6 136 9)"/>
+      <g class="blade blade-l"><ellipse cx="70" cy="9" rx="27" ry="8" fill="#EA4335" transform="rotate(-6 70 9)"/></g>
+      <g class="blade blade-r"><ellipse cx="136" cy="9" rx="27" ry="8" fill="#FBBC05" transform="rotate(6 136 9)"/></g>
     </g>
     <rect class="prop-hit" x="25" y="-3" width="160" height="95" fill="transparent"/>
-    <circle cx="103" cy="10" r="6" fill="#4285F4"/>
+    <circle class="prop-hub" cx="103" cy="10" r="6" fill="#4285F4"/>
     <path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
     <path d="M103 26 C104 43 105 66 106 89 L141 89 C139 62 125 37 103 26 Z" fill="#FBBC05"/>
@@ -262,18 +248,13 @@
   function btnIcon(name) { return document.querySelector('.hat-btn[data-hat="' + name + '"] svg'); }
 
   var beanieLayer = layer('beanie');
-  var spinTimer = null;
   function stopSpin() {
-    clearTimeout(spinTimer);
-    beanieLayer.classList.remove('spinning');
+    spinVel = 0;
+    if (spinRaf !== null) { cancelAnimationFrame(spinRaf); spinRaf = null; }
   }
   function spinProp() {
     if (reduceMotion) return;
-    beanieLayer.classList.remove('spinning');
-    beanieLayer.getBoundingClientRect(); // reflow so the animation restarts
-    beanieLayer.classList.add('spinning');
-    clearTimeout(spinTimer);
-    spinTimer = setTimeout(stopSpin, 900 * 4 + 150); // 4 turns, then stop
+    startInertia(1400); // landing burst: a lively kick, then friction (~4 turns)
   }
 
   // The layer's on-head geometry, ignoring its tilt, in viewport coords.
@@ -299,7 +280,6 @@
     var c = layer(name).cloneNode(true);
     c.removeAttribute('id');
     c.classList.remove('on');
-    c.classList.remove('spinning');
     c.classList.add('hat-fly');
     document.body.appendChild(c);
     return c;
@@ -375,24 +355,34 @@
   });
 
   // Swipe-to-spin: flick across the propeller like a fidget spinner, with momentum.
-  var prop = beanieLayer.querySelector('.prop');
+  // The blades stay rigid - they keep their drawn shape and thickness at every
+  // angle. Only the sweep plane is foreshortened: each blade's centre orbits
+  // the hub on an ellipse whose vertical semi-axis is PROP_S times the radius,
+  // it rotates to the ellipse's apparent radial angle, and it shortens (never
+  // thins) as it turns toward or away from the viewer.
+  var PROP_HUB = { x: 103, y: 9 }, PROP_R = 33, PROP_S = 0.32;
+  var blades = [
+    { el: beanieLayer.querySelector('.blade-l'), bx: 70, by: 9, phi0: 180 },
+    { el: beanieLayer.querySelector('.blade-r'), bx: 136, by: 9, phi0: 0 }
+  ];
   var spinAngle = 0, spinVel = 0, spinRaf = null;
   var dragState = null;
 
-  function propAngleNow() {
-    var tf = getComputedStyle(prop).transform;
-    if (tf && tf !== 'none') {
-      var m = tf.match(/matrix\(([^)]+)\)/);
-      if (m) {
-        var p = m[1].split(',').map(parseFloat);
-        return Math.atan2(p[1], p[0]) * 180 / Math.PI;
-      }
-    }
-    return spinAngle;
-  }
-
   function applySpin() {
-    prop.style.transform = 'rotate(' + spinAngle + 'deg) scaleY(0.28)';
+    blades.forEach(function (b) {
+      var p = (spinAngle + b.phi0) * Math.PI / 180;
+      var cos = Math.cos(p), sin = Math.sin(p);
+      var cx = PROP_HUB.x + PROP_R * cos;
+      var cy = PROP_HUB.y + PROP_S * PROP_R * sin;
+      // Apparent angle of the blade's radial direction on the squashed ellipse.
+      var psi = Math.atan2(PROP_S * sin, cos) * 180 / Math.PI;
+      // Ellipse's local scale along the radial direction: 1 at the sides
+      // (full-length blade), PROP_S at the near/far points (blade seen end-on).
+      var k = Math.sqrt(cos * cos + PROP_S * PROP_S * sin * sin);
+      b.el.setAttribute('transform',
+        'translate(' + cx.toFixed(2) + ' ' + cy.toFixed(2) + ') rotate(' + (psi - b.phi0).toFixed(2) +
+        ') scale(' + k.toFixed(3) + ' 1) translate(' + (-b.bx) + ' ' + (-b.by) + ')');
+    });
   }
 
   function spinStep(ts) {
@@ -413,8 +403,9 @@
     }
   }
 
+  var propHub = beanieLayer.querySelector('.prop-hub');
   function pointerAngle(e) {
-    var r = prop.getBoundingClientRect();
+    var r = propHub.getBoundingClientRect();
     return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
   }
 
@@ -422,7 +413,7 @@
 
   // --- diagnostics ---------------------------------------------------------
   // Bump this marker on every deploy so ?debug=1 can prove which code runs.
-  var BUILD = '2026-09-14-hitarea-debug-1';
+  var BUILD = '2026-09-14-foreshortened-prop-1';
 
   // Neutralize anything that could serve stale code on this domain: no
   // service worker is expected, so unregister any that a browser still holds.
@@ -471,7 +462,6 @@
     if ((current !== 'beanie' && current !== 'programmer' && !beanieLayer.classList.contains('on')) || reduceMotion) { debugLog('hit-area pointerdown, spin handler skipped (hat=' + current + ')'); return; }
     debugLog('spin handler fired');
     stopSpin(); // hand off from the landing burst to direct control
-    spinAngle = propAngleNow();
     spinVel = 0;
     applySpin();
     dragState = { last: pointerAngle(e), trail: [[performance.now(), spinAngle]], moved: 0,
@@ -488,7 +478,11 @@
     if (d < -180) d += 360;
     dragState.last = a;
     dragState.moved += Math.abs(d);
-    spinAngle += d;
+    // The pointer moves on the squashed screen ellipse; convert its angle
+    // delta to the blade's plane angle so the blade tracks the finger.
+    var pr = spinAngle * Math.PI / 180;
+    var dPlane = d * (Math.cos(pr) * Math.cos(pr) + PROP_S * PROP_S * Math.sin(pr) * Math.sin(pr)) / PROP_S;
+    spinAngle += dPlane;
     applySpin();
     dragState.trail.push([performance.now(), spinAngle]);
     if (dragState.trail.length > 6) dragState.trail.shift();
@@ -538,6 +532,7 @@
 
 </body>
 </html>
+
 
 
 
