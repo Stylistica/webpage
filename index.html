@@ -83,8 +83,10 @@
   .hat-btn svg { width: 42px; height: auto; display: block; }
   @keyframes prop-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   #hat-beanie .prop { transform-box: fill-box; transform-origin: center; }
-  /* The worn hat stays click-through except for one explicit propeller target.
-     This avoids guessing hit geometry from window-level pointer coordinates. */
+  /* The worn hat stays click-through except for one explicit hit target over
+     the whole beanie (crown and blades), so a tap anywhere on it spins the
+     propeller. This avoids guessing hit geometry from window-level pointer
+     coordinates. */
   #hat-beanie.on .prop-hit {
     pointer-events: all;
     cursor: pointer;
@@ -115,7 +117,7 @@
       <ellipse cx="70" cy="9" rx="27" ry="8" fill="#EA4335" transform="rotate(-6 70 9)"/>
       <ellipse cx="136" cy="9" rx="27" ry="8" fill="#FBBC05" transform="rotate(6 136 9)"/>
     </g>
-    <rect class="prop-hit" x="37" y="-3" width="132" height="26" fill="transparent"/>
+    <rect class="prop-hit" x="25" y="-3" width="160" height="95" fill="transparent"/>
     <circle cx="103" cy="10" r="6" fill="#4285F4"/>
     <path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
@@ -167,7 +169,7 @@
       <ellipse cx="70" cy="9" rx="27" ry="8" fill="#EA4335" transform="rotate(-6 70 9)"/>
       <ellipse cx="136" cy="9" rx="27" ry="8" fill="#FBBC05" transform="rotate(6 136 9)"/>
     </g>
-    <rect class="prop-hit" x="37" y="-3" width="132" height="26" fill="transparent"/>
+    <rect class="prop-hit" x="25" y="-3" width="160" height="95" fill="transparent"/>
     <circle cx="103" cy="10" r="6" fill="#4285F4"/>
     <path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
@@ -391,8 +393,56 @@
 
   var propHit = beanieLayer.querySelector('.prop-hit');
 
+  // --- diagnostics ---------------------------------------------------------
+  // Bump this marker on every deploy so ?debug=1 can prove which code runs.
+  var BUILD = '2026-09-14-hitarea-debug-1';
+
+  // Neutralize anything that could serve stale code on this domain: no
+  // service worker is expected, so unregister any that a browser still holds.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function (rs) {
+      rs.forEach(function (r) { r.unregister(); });
+    });
+  }
+
+  // ?debug=1 shows an on-page overlay logging each pointerdown (coordinates,
+  // target element, whether the spin handler fired, resulting velocity) and
+  // the current deployed commit hash.
+  var DEBUG = /[?&]debug=1/.test(location.search);
+  var dbgBox = null;
+  function debugLog(msg) {
+    if (!DEBUG) return;
+    if (!dbgBox) {
+      dbgBox = document.createElement('div');
+      dbgBox.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;max-width:92vw;max-height:45vh;overflow:auto;background:rgba(0,0,0,0.85);color:#9f9;font:11px/1.5 ui-monospace,Menlo,monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;pointer-events:none;';
+      document.body.appendChild(dbgBox);
+      debugLog('build ' + BUILD);
+      fetch('https://api.github.com/repos/Stylistica/webpage/commits?per_page=1').then(function (r) { return r.json(); }).then(function (d) {
+        var c = d && d[0];
+        debugLog('latest commit ' + (c ? c.sha.slice(0, 7) + ' "' + String(c.commit.message).split('\n')[0] + '"' : 'unknown'));
+      }).catch(function () { debugLog('commit lookup failed'); });
+    }
+    dbgBox.textContent += new Date().toISOString().slice(11, 23) + ' ' + msg + '\n';
+    dbgBox.scrollTop = dbgBox.scrollHeight;
+  }
+
+  if (DEBUG) {
+    document.addEventListener('pointerdown', function (e) {
+      var t = e.target;
+      var desc = t && t.tagName ? t.tagName.toLowerCase() : '?';
+      if (t && t.id) desc += '#' + t.id;
+      var cn = '';
+      if (t && t.className !== undefined) cn = typeof t.className === 'string' ? t.className : (t.className.baseVal || '');
+      cn = cn.trim();
+      if (cn) desc += '.' + cn.split(/\s+/).join('.');
+      debugLog('pointerdown ' + Math.round(e.clientX) + ',' + Math.round(e.clientY) + ' on ' + desc + (t === propHit ? ' [spin hit-area]' : ''));
+    }, true);
+    debugLog('debug overlay on');
+  }
+
   function beginDrag(e) {
-    if (current !== 'beanie' || reduceMotion) return;
+    if (current !== 'beanie' || reduceMotion) { debugLog('hit-area pointerdown, spin handler skipped (hat=' + current + ')'); return; }
+    debugLog('spin handler fired');
     stopSpin(); // hand off from the landing burst to direct control
     spinAngle = propAngleNow();
     spinVel = 0;
@@ -436,7 +486,9 @@
     // already spinning.
     if (pix < 8 && held < 600) {
       var dir = spinVel < 0 ? -1 : 1;
-      startInertia(dir * Math.max(1200, Math.abs(spinVel) + 900));
+      var kick = dir * Math.max(1200, Math.abs(spinVel) + 900);
+      debugLog('tap (pix=' + Math.round(pix) + ', held=' + Math.round(held) + 'ms) -> kick, velocity ' + Math.round(kick));
+      startInertia(kick);
       return;
     }
     var now = performance.now();
@@ -447,6 +499,7 @@
     var dt = (lastPt[0] - first[0]) / 1000;
     var v = dt > 0 ? (lastPt[1] - first[1]) / dt : 0;
     v = Math.max(-4000, Math.min(4000, v));
+    debugLog('flick (pix=' + Math.round(pix) + ') -> velocity ' + Math.round(v) + (Math.abs(v) > 30 ? '' : ' (too slow, ignored)'));
     if (Math.abs(v) > 30) startInertia(v);
   }
   propHit.addEventListener('pointerdown', beginDrag);
