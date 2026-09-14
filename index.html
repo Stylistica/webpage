@@ -25,6 +25,7 @@
      (Safari ignores preventDefault on pointerdown, so CSS is the reliable stop). */
   .portrait-wrap, .hats, h1.name { -webkit-user-select: none; user-select: none; }
   .me { max-width: 280px; width: 65vw; height: auto; display: block; }
+  .portrait-canvas { position: absolute; inset: 0; visibility: hidden; }
   .hat {
     position: absolute;
     pointer-events: none;
@@ -81,8 +82,18 @@
     background: rgba(128, 128, 128, 0.10);
   }
   .hat-btn svg { width: 42px; height: auto; display: block; }
-  @keyframes prop-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  #hat-beanie .prop { transform-box: fill-box; transform-origin: center; }
+  /* The propeller turns around the hat's upright post. In the front view its
+     circular path is foreshortened into a shallow ellipse, rather than
+     rotating flat against the screen like a clock hand. */
+  @keyframes prop-spin {
+    from { transform: rotate(0deg) scaleY(0.28); }
+    to   { transform: rotate(360deg) scaleY(0.28); }
+  }
+  #hat-beanie .prop {
+    transform-box: fill-box;
+    transform-origin: center;
+    transform: rotate(0deg) scaleY(0.28);
+  }
   /* The worn hat stays click-through except for one explicit hit target over
      the whole beanie (crown and blades), so a tap anywhere on it spins the
      propeller. This avoids guessing hit geometry from window-level pointer
@@ -123,6 +134,9 @@
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
     <path d="M103 26 C104 43 105 66 106 89 L141 89 C139 62 125 37 103 26 Z" fill="#FBBC05"/>
     <path d="M103 26 C125 37 139 62 141 89 L173 89 C173 56 149 29 103 26 Z" fill="#34A853"/>
+    <path d="M31 87 C62 94 114 94 160 87 C175 85 190 89 200 96 C168 108 111 112 57 105 C39 103 28 96 31 87 Z" fill="#4285F4"/>
+    <path d="M40 91 C78 98 128 96 169 89" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.28"/>
+    <path d="M31 87 C62 94 114 94 160 87 C175 85 190 89 200 96" fill="none" stroke="#2f4f91" stroke-width="3" opacity="0.5"/>
     <path d="M48 60 C58 42 80 33 100 34 C84 42 62 52 53 70 Z" fill="#ffffff" opacity="0.35"/>
     <path d="M31 89 C33 56 56 29 103 26 C149 29 173 56 173 89 L31 89" fill="none" stroke="#3a3a3a" stroke-width="3" opacity="0.45"/>
     <path d="M103 26 C83 39 69 62 67 89 M103 26 C104 43 105 66 106 89 M103 26 C125 37 139 62 141 89" fill="none" stroke="#3a3a3a" stroke-width="2" opacity="0.3"/>
@@ -162,7 +176,8 @@
 </div>
 
 <div class="portrait-wrap">
-  <canvas class="me" id="portrait" role="img" aria-label="Portrait of Sneha"></canvas>
+  <img class="me" id="portrait-fallback" src="me.png" alt="Portrait of Sneha">
+  <canvas class="me portrait-canvas" id="portrait" aria-hidden="true"></canvas>
   <svg class="hat" id="hat-beanie" viewBox="0 0 220 120" aria-hidden="true">
     <rect x="99" y="9" width="7" height="18" rx="3" fill="#9a9a9a"/>
     <g class="prop">
@@ -175,6 +190,9 @@
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
     <path d="M103 26 C104 43 105 66 106 89 L141 89 C139 62 125 37 103 26 Z" fill="#FBBC05"/>
     <path d="M103 26 C125 37 139 62 141 89 L173 89 C173 56 149 29 103 26 Z" fill="#34A853"/>
+    <path d="M31 87 C62 94 114 94 160 87 C175 85 190 89 200 96 C168 108 111 112 57 105 C39 103 28 96 31 87 Z" fill="#4285F4"/>
+    <path d="M40 91 C78 98 128 96 169 89" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.28"/>
+    <path d="M31 87 C62 94 114 94 160 87 C175 85 190 89 200 96" fill="none" stroke="#2f4f91" stroke-width="3" opacity="0.5"/>
     <path d="M48 60 C58 42 80 33 100 34 C84 42 62 52 53 70 Z" fill="#ffffff" opacity="0.35"/>
     <path d="M31 89 C33 56 56 29 103 26 C149 29 173 56 173 89 L31 89" fill="none" stroke="#3a3a3a" stroke-width="3" opacity="0.45"/>
     <path d="M103 26 C83 39 69 62 67 89 M103 26 C104 43 105 66 106 89 M103 26 C125 37 139 62 141 89" fill="none" stroke="#3a3a3a" stroke-width="2" opacity="0.3"/>
@@ -189,18 +207,18 @@
 <script>
 (function () {
   var canvas = document.getElementById('portrait');
-  var img = new Image();
-  img.src = 'me.png';
-  img.onload = function () {
+  var img = document.getElementById('portrait-fallback');
+  var rendered = false;
+  function renderPortrait() {
+    if (rendered || !img.naturalWidth) return;
+    rendered = true;
     var w = img.naturalWidth, h = img.naturalHeight;
     canvas.width = w;
     canvas.height = h;
     var ctx = canvas.getContext('2d');
-    // Respect reduced-motion: show the final image immediately.
-    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      ctx.drawImage(img, 0, 0);
-      return;
-    }
+    // Keep the real image visible for reduced motion. It is also the safe
+    // fallback if canvas setup or animation fails in a browser.
+    if (!ctx || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
     // Pixel reveal: coarse mosaic that doubles in resolution until sharp.
     var steps = [];
     for (var s = 8; s < w; s *= 2) steps.push(s);
@@ -218,11 +236,20 @@
       off.getContext('2d').drawImage(img, 0, 0, sw, sh);
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(off, 0, 0, sw, sh, 0, 0, w, h);
+      // Swap only after a real frame exists, so the portrait can never be
+      // replaced by an empty canvas on a warm cache or a failed setup.
+      if (canvas.style.visibility !== 'visible') {
+        canvas.style.visibility = 'visible';
+        img.style.visibility = 'hidden';
+      }
       i++;
       if (i < steps.length) setTimeout(drawStep, interval);
     }
     drawStep();
-  };
+  }
+  img.addEventListener('load', renderPortrait, { once: true });
+  // Cached images can already be complete before listeners are attached.
+  if (img.complete) renderPortrait();
 })();
 
 (function () {
@@ -365,7 +392,7 @@
   }
 
   function applySpin() {
-    prop.style.transform = 'rotate(' + spinAngle + 'deg)';
+    prop.style.transform = 'rotate(' + spinAngle + 'deg) scaleY(0.28)';
   }
 
   function spinStep(ts) {
