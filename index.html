@@ -411,7 +411,8 @@
     spinAngle = propAngleNow();
     spinVel = 0;
     applySpin();
-    dragState = { last: pointerAngle(e), trail: [[performance.now(), spinAngle]], moved: 0 };
+    dragState = { last: pointerAngle(e), trail: [[performance.now(), spinAngle]], moved: 0,
+                  pix: 0, px: e.clientX, py: e.clientY, t0: performance.now() };
     e.preventDefault();
   });
 
@@ -427,17 +428,25 @@
     applySpin();
     dragState.trail.push([performance.now(), spinAngle]);
     if (dragState.trail.length > 6) dragState.trail.shift();
+    var mdx = e.clientX - dragState.px, mdy = e.clientY - dragState.py;
+    dragState.pix += Math.sqrt(mdx * mdx + mdy * mdy);
+    dragState.px = e.clientX;
+    dragState.py = e.clientY;
   });
 
   function endDrag() {
     if (!dragState) return;
     var trail = dragState.trail;
-    var moved = dragState.moved;
+    var pix = dragState.pix;
+    var held = performance.now() - dragState.t0;
     dragState = null;
-    // Plain click on the blades: no real drag, so give it a kick with momentum
-    // instead of running flick math on a stationary pointer. Keep the current
-    // direction if it's already spinning.
-    if (moved < 10) {
+    // Plain click on the blades: the pointer barely moved and the press was
+    // short, so give it a kick with momentum instead of running flick math on
+    // a stationary pointer. Judge in pixels, not degrees of arc: real mouse
+    // clicks jitter a few px, which near the propeller hub is tens of degrees
+    // and used to misread clicks as drags. Keep the current direction if it's
+    // already spinning.
+    if (pix < 8 && held < 600) {
       var dir = spinVel < 0 ? -1 : 1;
       startInertia(dir * Math.max(1200, Math.abs(spinVel) + 900));
       return;
