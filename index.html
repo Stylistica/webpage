@@ -83,6 +83,13 @@
   .hat-btn svg { width: 42px; height: auto; display: block; }
   @keyframes prop-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   #hat-beanie .prop { transform-box: fill-box; transform-origin: center; }
+  /* The worn hat stays click-through except for one explicit propeller target.
+     This avoids guessing hit geometry from window-level pointer coordinates. */
+  #hat-beanie.on .prop-hit {
+    pointer-events: all;
+    cursor: pointer;
+    touch-action: none;
+  }
   #hat-beanie.spinning .prop {
     animation: prop-spin 0.9s linear 4;
     transform-box: fill-box;
@@ -108,6 +115,7 @@
       <ellipse cx="70" cy="9" rx="27" ry="8" fill="#EA4335" transform="rotate(-6 70 9)"/>
       <ellipse cx="136" cy="9" rx="27" ry="8" fill="#FBBC05" transform="rotate(6 136 9)"/>
     </g>
+    <rect class="prop-hit" x="37" y="-3" width="132" height="26" fill="transparent"/>
     <circle cx="103" cy="10" r="6" fill="#4285F4"/>
     <path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
@@ -159,6 +167,7 @@
       <ellipse cx="70" cy="9" rx="27" ry="8" fill="#EA4335" transform="rotate(-6 70 9)"/>
       <ellipse cx="136" cy="9" rx="27" ry="8" fill="#FBBC05" transform="rotate(6 136 9)"/>
     </g>
+    <rect class="prop-hit" x="37" y="-3" width="132" height="26" fill="transparent"/>
     <circle cx="103" cy="10" r="6" fill="#4285F4"/>
     <path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
@@ -380,47 +389,22 @@
     return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
   }
 
-  function overProp(e) {
-    var r = prop.getBoundingClientRect();
-    var padX = r.width * 0.2 + 10, padY = r.height * 1.2 + 10;
-    return e.clientX >= r.left - padX && e.clientX <= r.right + padX &&
-           e.clientY >= r.top - padY && e.clientY <= r.bottom + padY;
-  }
+  var propHit = beanieLayer.querySelector('.prop-hit');
 
-  // Block page scroll for gestures that start on the worn hat. Pure JS (touch-action
-  // stays pan-y everywhere) so hat placement and layout are untouched.
-  var hatTouch = false;
-  window.addEventListener('touchstart', function (e) {
-    hatTouch = false;
-    var t = e.touches[0];
-    if (!t || reduceMotion) return;
-    var h = document.querySelector('.hat.on');
-    if (h) {
-      var r = h.getBoundingClientRect(), pad = 14;
-      if (t.clientX >= r.left - pad && t.clientX <= r.right + pad &&
-          t.clientY >= r.top - pad && t.clientY <= r.bottom + pad) hatTouch = true;
-    }
-    if (!hatTouch && current === 'beanie' && overProp(t)) hatTouch = true;
-  }, { passive: true });
-  window.addEventListener('touchmove', function (e) {
-    if (hatTouch) e.preventDefault();
-  }, { passive: false });
-  window.addEventListener('touchend', function () { hatTouch = false; });
-  window.addEventListener('touchcancel', function () { hatTouch = false; });
-
-  window.addEventListener('pointerdown', function (e) {
-    if (current !== 'beanie' || reduceMotion || !overProp(e)) return;
+  function beginDrag(e) {
+    if (current !== 'beanie' || reduceMotion) return;
     stopSpin(); // hand off from the landing burst to direct control
     spinAngle = propAngleNow();
     spinVel = 0;
     applySpin();
     dragState = { last: pointerAngle(e), trail: [[performance.now(), spinAngle]], moved: 0,
-                  pix: 0, px: e.clientX, py: e.clientY, t0: performance.now() };
+                  pix: 0, px: e.clientX, py: e.clientY, t0: performance.now(), id: e.pointerId };
+    propHit.setPointerCapture(e.pointerId);
     e.preventDefault();
-  });
+  }
 
-  window.addEventListener('pointermove', function (e) {
-    if (!dragState) return;
+  function moveDrag(e) {
+    if (!dragState || e.pointerId !== dragState.id) return;
     var a = pointerAngle(e);
     var d = a - dragState.last;
     if (d > 180) d -= 360;
@@ -435,7 +419,8 @@
     dragState.pix += Math.sqrt(mdx * mdx + mdy * mdy);
     dragState.px = e.clientX;
     dragState.py = e.clientY;
-  });
+    e.preventDefault();
+  }
 
   function endDrag() {
     if (!dragState) return;
@@ -464,13 +449,16 @@
     v = Math.max(-4000, Math.min(4000, v));
     if (Math.abs(v) > 30) startInertia(v);
   }
-  window.addEventListener('pointerup', endDrag);
-  window.addEventListener('pointercancel', endDrag);
+  propHit.addEventListener('pointerdown', beginDrag);
+  propHit.addEventListener('pointermove', moveDrag);
+  propHit.addEventListener('pointerup', endDrag);
+  propHit.addEventListener('pointercancel', endDrag);
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
