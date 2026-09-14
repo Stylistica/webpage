@@ -33,7 +33,7 @@
     transition: opacity 0.35s ease;
   }
   .hat.on { opacity: 1; }
-  #hat-beanie { left: 15%; top: -3%; width: 74%; transform: rotate(-2deg); overflow: visible; }
+  #hat-beanie { left: 15%; top: -1%; width: 74%; transform: rotate(-2deg); overflow: visible; }
   #hat-cap    { left: 10%; top: -3%; width: 79%; transform: rotate(-2deg); }
   #hat-beret  { left: 15.5%; top: -1%; width: 61%; transform: rotate(-12deg); }
   .hat.hat-fly {
@@ -116,7 +116,7 @@
     </g>
     <rect class="prop-hit" x="25" y="-3" width="160" height="95" fill="transparent"/>
     <circle cx="103" cy="10" r="6" fill="#4285F4"/>
-    <path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
+    <g transform="translate(103 0) scale(1.06 1) translate(-103 0)"><path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
     <path d="M103 26 C104 43 105 66 106 89 L141 89 C139 62 125 37 103 26 Z" fill="#FBBC05"/>
     <path d="M103 26 C125 37 139 62 141 89 L173 89 C173 56 149 29 103 26 Z" fill="#34A853"/>
@@ -125,7 +125,7 @@
     <path d="M31 87 C62 94 114 94 160 87 C175 85 190 89 200 96" fill="none" stroke="#2f4f91" stroke-width="3" opacity="0.5"/>
     <path d="M48 60 C58 42 80 33 100 34 C84 42 62 52 53 70 Z" fill="#ffffff" opacity="0.35"/>
     <path d="M31 89 C33 56 56 29 103 26 C149 29 173 56 173 89 L31 89" fill="none" stroke="#3a3a3a" stroke-width="3" opacity="0.45"/>
-    <path d="M103 26 C83 39 69 62 67 89 M103 26 C104 43 105 66 106 89 M103 26 C125 37 139 62 141 89" fill="none" stroke="#3a3a3a" stroke-width="2" opacity="0.3"/>
+    <path d="M103 26 C83 39 69 62 67 89 M103 26 C104 43 105 66 106 89 M103 26 C125 37 139 62 141 89" fill="none" stroke="#3a3a3a" stroke-width="2" opacity="0.3"/></g>
   </symbol>
   <symbol id="art-cap" viewBox="0 0 220 120">
     <path d="M48 82 C42 40 72 18 110 18 C148 18 178 40 172 82 C140 90 80 90 48 82 Z" fill="#cbb27a"/>
@@ -172,7 +172,7 @@
     </g>
     <rect class="prop-hit" x="25" y="-3" width="160" height="95" fill="transparent"/>
     <circle class="prop-hub" cx="103" cy="10" r="6" fill="#4285F4"/>
-    <path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
+    <g transform="translate(103 0) scale(1.06 1) translate(-103 0)"><path d="M103 26 C56 29 33 56 31 89 L67 89 C69 62 83 39 103 26 Z" fill="#4285F4"/>
     <path d="M103 26 C83 39 69 62 67 89 L106 89 C105 66 104 43 103 26 Z" fill="#EA4335"/>
     <path d="M103 26 C104 43 105 66 106 89 L141 89 C139 62 125 37 103 26 Z" fill="#FBBC05"/>
     <path d="M103 26 C125 37 139 62 141 89 L173 89 C173 56 149 29 103 26 Z" fill="#34A853"/>
@@ -181,7 +181,7 @@
     <path d="M31 87 C62 94 114 94 160 87 C175 85 190 89 200 96" fill="none" stroke="#2f4f91" stroke-width="3" opacity="0.5"/>
     <path d="M48 60 C58 42 80 33 100 34 C84 42 62 52 53 70 Z" fill="#ffffff" opacity="0.35"/>
     <path d="M31 89 C33 56 56 29 103 26 C149 29 173 56 173 89 L31 89" fill="none" stroke="#3a3a3a" stroke-width="3" opacity="0.45"/>
-    <path d="M103 26 C83 39 69 62 67 89 M103 26 C104 43 105 66 106 89 M103 26 C125 37 139 62 141 89" fill="none" stroke="#3a3a3a" stroke-width="2" opacity="0.3"/>
+    <path d="M103 26 C83 39 69 62 67 89 M103 26 C104 43 105 66 106 89 M103 26 C125 37 139 62 141 89" fill="none" stroke="#3a3a3a" stroke-width="2" opacity="0.3"/></g>
   </svg>
   <svg class="hat" id="hat-cap" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-cap"/></svg>
   <svg class="hat" id="hat-beret" viewBox="0 0 220 120" aria-hidden="true"><use href="#art-beret"/></svg>
@@ -413,7 +413,7 @@
 
   // --- diagnostics ---------------------------------------------------------
   // Bump this marker on every deploy so ?debug=1 can prove which code runs.
-  var BUILD = '2026-09-14-foreshortened-prop-1';
+  var BUILD = '2026-09-14-wider-lower-noogler-cap-1';
 
   // Neutralize anything that could serve stale code on this domain: no
   // service worker is expected, so unregister any that a browser still holds.
