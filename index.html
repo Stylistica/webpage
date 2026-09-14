@@ -441,7 +441,7 @@
   }
 
   function beginDrag(e) {
-    if (current !== 'beanie' || reduceMotion) { debugLog('hit-area pointerdown, spin handler skipped (hat=' + current + ')'); return; }
+    if ((current !== 'beanie' && current !== 'programmer' && !beanieLayer.classList.contains('on')) || reduceMotion) { debugLog('hit-area pointerdown, spin handler skipped (hat=' + current + ')'); return; }
     debugLog('spin handler fired');
     stopSpin(); // hand off from the landing burst to direct control
     spinAngle = propAngleNow();
